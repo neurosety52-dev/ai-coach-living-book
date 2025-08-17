@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>Быстрый тест трансфера</title></head>
+<body>
+    <h1>🔐 Тест облачного Puter.js</h1>
+    <button onclick="testTransfer()">Тест трансфера</button>
+    <div id="result" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd;"></div>
+
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+    async function testTransfer() {
+        document.getElementById('result').innerHTML = '🔄 Тестируем...';
+        
+        try {
+            const response = await puter.ai.chat("Привет! Тест трансфера с localhost", {model: 'gpt-4o-mini'});
+            document.getElementById('result').innerHTML = `✅ УСПЕХ! AI ответил: ${response}`;
+        } catch (error) {
+            document.getElementById('result').innerHTML = `❌ Ошибка: ${error.message}`;
+        }
+    }
+    </script>
+</body>
+</html>

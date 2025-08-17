@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI-Коуч "Микро-очистка" - Живая Книга</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            max-width: 900px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .coach-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .question-area {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        input, button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        #chat { 
+            max-height: 400px; 
+            overflow-y: auto; 
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .message { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 8px; 
+            animation: fadeIn 0.5s;
+        }
+        .user-message { background: rgba(74, 144, 226, 0.3); text-align: right; }
+        .coach-message { background: rgba(46, 204, 113, 0.3); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="coach-container">
+        <h1>🧹 AI-Коуч "Микро-очистка"</h1>
+        <p>Персональный помощник по системе микро-очистки из книги. Задавайте вопросы, получайте персональные рекомендации!</p>
+        
+        <div class="question-area">
+            <input type="text" id="userQuestion" placeholder="Спросите о микро-очистке: 'Как начать?', 'План на неделю?', 'Мотивация?'" style="width: 70%;">
+            <button onclick="askCoach()" style="width: 25%; margin-left: 2%;">Спросить коуча</button>
+        </div>
+        
+        <div id="chat"></div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="clearChat()" style="background: #95a5a6;">Новый разговор</button>
+            <button onclick="getWeeklyPlan()" style="background: #e67e22;">План на неделю</button>
+            <button onclick="getMotivation()" style="background: #9b59b6;">Мотивация</button>
+        </div>
+    </div>
+
+    <script src="puter.js"></script>
+    <script>
+        let conversationHistory = [];
+        
+        function addMessage(message, isUser = false) {
+            const chat = document.getElementById('chat');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message coach-message';
+            messageDiv.innerHTML = `<strong>${isUser ? 'Вы' : '🧹 AI-Коуч'}:</strong> ${message}`;
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        async function askCoach() {
+            const question = document.getElementById('userQuestion').value;
+            if (!question.trim()) return;
+            
+            addMessage(question, true);
+            addMessage('Анализирую ваш вопрос и готовлю персональный ответ...', false);
+            
+            // Системный промпт для AI-коуча
+            const coachPrompt = `Ты опытный коуч по системе "микро-очистка". 
+
+ТВОЯ РОЛЬ: Персональный помощник по книге о микро-очистке.
+
+ПРИНЦИПЫ МИКРО-ОЧИСТКИ:
+- Маленькие ежедневные действия приводят к большим изменениям
+- 5-15 минут в день на уборку конкретной зоны
+- Система "одна вещь - одно место"
+- Постепенное формирование привычек
+- Фокус на процессе, а не на результате
+
+ТВОЙ СТИЛЬ:
+- Поддерживающий и мотивирующий
+- Практичные конкретные советы
+- Персональный подход
+- Короткие понятные ответы
+
+Пользователь спрашивает: "${question}"
+
+Дай персональный ответ как опытный коуч по микро-очистке.`;
+
+            try {
+                // Здесь будет вызов к AI через локальный puter.js
+                // Пока заглушка для демонстрации
+                setTimeout(() => {
+                    const lastMessage = document.querySelector('.coach-message:last-child');
+                    if (lastMessage) {
+                        lastMessage.innerHTML = `<strong>🧹 AI-Коуч:</strong> 
+                        Отличный вопрос! По системе микро-очистки рекомендую начать с выбора одной небольшой зоны (например, рабочий стол). 
+                        Потратьте 10 минут на её полную очистку и организацию. 
+                        Повторяйте это каждый день в одно и то же время. 
+                        Через неделю добавьте вторую зону. 
+                        
+                        🎯 <strong>Ваш первый шаг:</strong> Выберите зону прямо сейчас и потратьте 10 минут!
+                        
+                        <em>Помните: маленькие шаги ведут к большим переменам!</em>`;
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                addMessage('Извините, произошла ошибка. Попробуйте еще раз.', false);
+            }
+            
+            document.getElementById('userQuestion').value = '';
+        }
+        
+        function clearChat() {
+            document.getElementById('chat').innerHTML = '';
+            conversationHistory = [];
+            addMessage('Привет! Я ваш AI-коуч по микро-очистке. Готов помочь вам создать порядок в жизни! Что вас интересует?', false);
+        }
+        
+        function getWeeklyPlan() {
+            addMessage('Составьте мне план микро-очистки на неделю', true);
+            setTimeout(() => {
+                addMessage(`📅 <strong>Ваш план микро-очистки на неделю:</strong><br><br>
+                <strong>ПН:</strong> Рабочий стол (10 мин)<br>
+                <strong>ВТ:</strong> Кухонные столешницы (10 мин)<br>
+                <strong>СР:</strong> Прикроватная тумбочка (10 мин)<br>
+                <strong>ЧТ:</strong> Входная зона/прихожая (15 мин)<br>
+                <strong>ПТ:</strong> Ванная комната - полочки (10 мин)<br>
+                <strong>СБ:</strong> Один ящик в шкафу (15 мин)<br>
+                <strong>ВС:</strong> Отдых и планирование на следующую неделю<br><br>
+                💡 <strong>Секрет:</strong> Делайте в одно и то же время каждый день!`, false);
+            }, 1000);
+        }
+        
+        function getMotivation() {
+            const motivations = [
+                "🌟 Каждая убранная вещь - это шаг к внутреннему спокойствию!",
+                "💪 Вы уже начали - это самое сложное! Продолжайте!",
+                "🏡 Ваш дом становится отражением вашего организованного ума!",
+                "⚡ 10 минут сегодня = часы свободного времени завтра!",
+                "🎯 Маленькие действия создают большие привычки!"
+            ];
+            const randomMotivation = motivations[Math.floor(Math.random() * motivations.length)];
+            addMessage(randomMotivation, false);
+        }
+        
+        // Обработка Enter
+        document.getElementById('userQuestion').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askCoach();
+            }
+        });
+        
+        // Приветствие при загрузке
+        window.onload = function() {
+            setTimeout(() => {
+                addMessage('Добро пожаловать! Я ваш AI-коуч по микро-очистке из "Живой Книги". Готов помочь вам навести порядок в жизни! О чем хотите поговорить?', false);
+            }, 500);
+        };
+    </script>
+</body>
+</html>
