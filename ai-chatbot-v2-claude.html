@@ -529,7 +529,7 @@
                 const fullPrompt = `${COACH_PROMPT} "${userMessage}"`;
                 
                 const response = await puter.ai.chat(fullPrompt, {
-                    model: 'claude'
+                    model: 'claude-3.7-sonnet'
                 });
                 
                 // Скрываем индикатор
@@ -583,3 +583,4 @@
 </body>
 
 </html>
+
