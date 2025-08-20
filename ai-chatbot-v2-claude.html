@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ассистент - Живая Книга</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 380px;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+        
+        .chat-widget.open {
+            transform: translateY(0);
+        }
+        
+        .widget-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .header-text h3 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+        
+        .status-indicator {
+            font-size: 12px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+            scroll-behavior: smooth;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            animation: slideIn 0.4s ease-out;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-content {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .ai-message .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 4px;
+            text-align: right;
+        }
+        
+        .user-message .message-time {
+            color: white;
+        }
+        
+        .ai-message .message-time {
+            color: #666;
+            text-align: left;
+        }
+        
+        .typing-indicator {
+            display: none;
+            margin-bottom: 16px;
+        }
+        
+        .typing-content {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+            padding: 12px 16px;
+            max-width: 85%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-btn {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #666;
+        }
+        
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        #userInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+            max-height: 100px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        #userInput:focus {
+            border-color: #667eea;
+        }
+        
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            font-size: 18px;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+            z-index: 1001;
+        }
+        
+        .toggle-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .toggle-btn.hidden {
+            display: none;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .chat-widget {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 40px);
+                right: 10px;
+                bottom: 10px;
+                border-radius: 15px;
+            }
+            
+            .toggle-btn {
+                right: 15px;
+                bottom: 15px;
+            }
+        }
+        
+        /* Скроллбар */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Кнопка открытия чата -->
+    <button class="toggle-btn" id="toggleBtn" onclick="toggleChat()">
+        💬
+    </button>
+    
+    <!-- Виджет чата -->
+    <div class="chat-widget" id="chatWidget">
+        <div class="widget-header">
+            <button class="close-btn" onclick="toggleChat()">×</button>
+            <div class="header-content">
+                <div class="avatar">🧹</div>
+                <div class="header-text">
+                    <h3>AI-Коуч</h3>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span id="statusText">Онлайн</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                <div class="message-content">
+                    👋 Привет! Я ваш персональный AI-коуч по микро-очистке из проекта "Живая Книга". 
+                    <br><br>
+                    Готов помочь вам навести порядок в жизни! Начнем? 🚀
+                </div>
+                <div class="message-time">Только что</div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-content">
+                <div class="typing-dots">
+                    <span>🤖 Думаю</span>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="quickMessage('Как начать микро-очистку?')">🚀 Начать</button>
+                <button class="quick-btn" onclick="quickMessage('План на неделю')">📅 План</button>
+                <button class="quick-btn" onclick="quickMessage('Нужна мотивация!')">💪 Мотивация</button>
+                <button class="quick-btn" onclick="quickMessage('Что делать с беспорядком?')">🧹 Беспорядок</button>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea id="userInput" placeholder="Напишите ваш вопрос..." rows="1" maxlength="500"></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем Puter.js -->
+    <script src="https://js.puter.com/v2/"></script>
+    
+    <script>
+        // Системный промпт для AI-коуча
+        const COACH_PROMPT = `Ты опытный коуч по системе "микро-очистка" из проекта "Живая Книга".
+
+ТВОЯ РОЛЬ: Дружелюбный персональный помощник по наведению порядка.
+
+ПРИНЦИПЫ МИКРО-ОЧИСТКИ:
+- Маленькие ежедневные действия приводят к большим изменениям
+- 5-15 минут в день на уборку конкретной зоны
+- Система "одна вещь - одно место"  
+- Постепенное формирование привычек
+- Фокус на процессе, а не на результате
+
+ТВОЙ СТИЛЬ:
+- Очень поддерживающий и мотивирующий
+- Практичные конкретные советы
+- Персональный теплый подход
+- Короткие понятные ответы (2-3 предложения)
+- Обязательно используй подходящие эмодзи
+- Говори вдохновляюще, но не навязчиво
+
+Пользователь спрашивает:`;
+
+        let chatHistory = [];
+        let isOpen = false;
+        
+        function toggleChat() {
+            const widget = document.getElementById('chatWidget');
+            const btn = document.getElementById('toggleBtn');
+            
+            isOpen = !isOpen;
+            widget.classList.toggle('open', isOpen);
+            btn.classList.toggle('hidden', isOpen);
+            
+            if (isOpen) {
+                document.getElementById('userInput').focus();
+            }
+        }
+        
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            messageEl.innerHTML = `
+                <div class="message-content">${content}</div>
+                <div class="message-time">${timeStr}</div>
+            `;
+            
+            messagesContainer.appendChild(messageEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Запускаем анимацию
+            setTimeout(() => {
+                messageEl.style.opacity = '1';
+            }, 50);
+        }
+        
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.style.display = show ? 'block' : 'none';
+            statusText.textContent = show ? 'Печатает...' : 'Онлайн';
+            
+            if (show) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+        
+        function quickMessage(text) {
+            document.getElementById('userInput').value = text;
+            sendMessage();
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            // Отключаем интерфейс
+            input.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Добавляем сообщение пользователя
+            addMessage(userMessage, true);
+            input.value = '';
+            
+            // Показываем индикатор печати
+            showTyping(true);
+            
+            try {
+                // Формируем запрос к AI
+                const fullPrompt = `${COACH_PROMPT} "${userMessage}"`;
+                
+                const response = await puter.ai.chat(fullPrompt, {
+                    model: 'claude'
+                });
+                
+                // Скрываем индикатор
+                showTyping(false);
+                
+                // Добавляем ответ AI
+                addMessage(response);
+                
+                // Сохраняем в историю
+                chatHistory.push({
+                    user: userMessage,
+                    ai: response,
+                    timestamp: new Date()
+                });
+                
+            } catch (error) {
+                showTyping(false);
+                addMessage(`😔 Извините, произошла ошибка. Попробуйте еще раз через несколько секунд.`);
+                console.error('AI Error:', error);
+            }
+            
+            // Включаем интерфейс
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+        
+        // Автоматическое изменение высоты textarea
+        document.getElementById('userInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+        
+        // Отправка по Enter
+        document.getElementById('userInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Автооткрытие чата через 3 секунды (можно убрать)
+        setTimeout(() => {
+            if (!isOpen) {
+                toggleChat();
+            }
+        }, 3000);
+        
+        console.log('🤖 AI-Коуч "Живая Книга" загружен успешно!');
+    </script>
+</body>
+</html>
