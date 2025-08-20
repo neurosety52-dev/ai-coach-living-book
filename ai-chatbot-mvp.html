@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ассистент - MVP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .ai-message {
+            background: #e9ecef;
+            color: #333;
+            border-left: 4px solid #667eea;
+        }
+        
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+        
+        #userInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        #userInput:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: #e9ecef;
+            border-radius: 18px;
+            max-width: 80%;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI-Ассистент "Живой Книги"</h1>
+            <p>Ваш персональный коуч по микро-очистке</p>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="ai-message">
+                <strong>🧹 AI-Коуч:</strong> Привет! Я ваш персональный ассистент по системе микро-очистки. Готов помочь вам навести порядок в жизни! О чем хотите поговорить?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            🤖 AI думает...
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Напишите ваш вопрос..." maxlength="500">
+            <button onclick="sendMessage()" id="sendButton">Отправить</button>
+        </div>
+        
+        <div class="status" id="status">
+            Статус: Готов к работе
+        </div>
+    </div>
+
+    <!-- Подключаем Puter.js -->
+    <script src="https://js.puter.com/v2/"></script>
+    
+    <script>
+        // Системный промпт для AI-коуча
+        const COACH_PROMPT = `Ты опытный коуч по системе "микро-очистка" из проекта "Живая Книга".
+
+ТВОЯ РОЛЬ: Персональный помощник по наведению порядка.
+
+ПРИНЦИПЫ МИКРО-ОЧИСТКИ:
+- Маленькие ежедневные действия приводят к большим изменениям
+- 5-15 минут в день на уборку конкретной зоны
+- Система "одна вещь - одно место"
+- Постепенное формирование привычек
+- Фокус на процессе, а не на результате
+
+ТВОЙ СТИЛЬ:
+- Поддерживающий и мотивирующий
+- Практичные конкретные советы
+- Персональный подход
+- Короткие понятные ответы (максимум 3-4 предложения)
+- Используй эмодзи для эмоциональности
+
+Пользователь спрашивает:`;
+
+        let conversationHistory = [];
+
+        function addMessage(message, isUser = false) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message ai-message';
+            
+            if (isUser) {
+                messageDiv.innerHTML = `<strong>Вы:</strong> ${message}`;
+            } else {
+                messageDiv.innerHTML = `<strong>🧹 AI-Коуч:</strong> ${message}`;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = show ? 'block' : 'none';
+            
+            if (show) {
+                document.getElementById('chatContainer').appendChild(indicator);
+                document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Статус: ${message}`;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            // Отключаем интерфейс
+            input.disabled = true;
+            sendButton.disabled = true;
+            
+            // Добавляем сообщение пользователя
+            addMessage(userMessage, true);
+            input.value = '';
+            
+            // Показываем индикатор печати
+            showTyping(true);
+            updateStatus('Обращаюсь к AI...');
+            
+            try {
+                // Формируем полный промпт
+                const fullPrompt = `${COACH_PROMPT} "${userMessage}"`;
+                
+                // Обращаемся к Puter.js AI
+                const response = await puter.ai.chat(fullPrompt, {
+                    model: 'gpt-4o-mini' // Быстрая модель для MVP
+                });
+                
+                // Скрываем индикатор печати
+                showTyping(false);
+                
+                // Добавляем ответ AI
+                addMessage(response);
+                updateStatus('Готов к работе');
+                
+                // Сохраняем в историю
+                conversationHistory.push({
+                    user: userMessage,
+                    ai: response,
+                    timestamp: new Date()
+                });
+                
+            } catch (error) {
+                showTyping(false);
+                addMessage(`Извините, произошла ошибка: ${error.message}. Попробуйте еще раз.`);
+                updateStatus('Ошибка соединения');
+                console.error('AI Error:', error);
+            }
+            
+            // Включаем интерфейс обратно
+            input.disabled = false;
+            sendButton.disabled = false;
+            input.focus();
+        }
+
+        // Быстрые команды для тестирования
+        function quickTest(question) {
+            document.getElementById('userInput').value = question;
+            sendMessage();
+        }
+
+        // Обработка Enter
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Автофокус на поле ввода
+        window.onload = function() {
+            document.getElementById('userInput').focus();
+            updateStatus('Система загружена');
+        };
+
+        // Добавляем быстрые кнопки для тестирования (можно убрать в продакшене)
+        setTimeout(() => {
+            const container = document.querySelector('.input-area');
+            const quickButtons = document.createElement('div');
+            quickButtons.innerHTML = `
+                <div style="margin-top: 10px; text-align: center;">
+                    <button onclick="quickTest('Как начать микро-очистку?')" style="margin: 5px; padding: 8px 12px; font-size: 14px;">Как начать?</button>
+                    <button onclick="quickTest('План на неделю')" style="margin: 5px; padding: 8px 12px; font-size: 14px;">План на неделю</button>
+                    <button onclick="quickTest('Мотивация')" style="margin: 5px; padding: 8px 12px; font-size: 14px;">Мотивация</button>
+                </div>
+            `;
+            container.appendChild(quickButtons);
+        }, 1000);
+    </script>
+</body>
+</html>
